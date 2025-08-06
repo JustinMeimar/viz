@@ -4,7 +4,6 @@ class Node {
         this.label = label;
         this.x = x;
         this.y = y;
-        // Calculate width based on label length, with minimum width
         this.width = Math.max(80, label.length * 12 + 20);
         this.height = 40;
         this.color = '#e0e0e0';
@@ -356,11 +355,10 @@ class CanvasView {
 class GraphLayoutEngine {
     constructor(graphModel) {
         this.graphModel = graphModel;
-        // Dimensions optimized for top-down layout
-        this.layoutWidth = 2000;  // Horizontal space for nodes within layers
-        this.layoutHeight = 3000; // Vertical space for layers
-        this.minLayerSpacing = 150; // Minimum vertical spacing between layers
-        this.minNodeSpacing = 60; // Minimum horizontal spacing between nodes in same layer
+        this.layoutWidth = 2000;
+        this.layoutHeight = 3000;
+        this.minLayerSpacing = 150;
+        this.minNodeSpacing = 60;
     }
     
     layout() {
@@ -420,7 +418,6 @@ class GraphLayoutEngine {
             });
         });
         
-        console.log(`Layout: ${totalLayers} layers (top-down), max ${maxNodesInLayer} nodes per layer`);
     }
     
     assignLayerNumbers(nodes) {
@@ -571,13 +568,10 @@ class GraphRenderer {
             
             if (!fromNode || !toNode) return;
             
-            // Only render if BOTH endpoints are visible (improved culling)
             if (visibleNodeIds.has(edge.fromId) && visibleNodeIds.has(edge.toId)) {
-                // Priority for edge styling: selected > highlighted > scheduled > default
                 let strokeColor = edge.color;
                 let lineWidth = edge.width;
                 
-                // Check if either endpoint is scheduled
                 const isScheduledEdge = fromNode.scheduled || toNode.scheduled;
                 
                 if (edge.selected) {
@@ -587,7 +581,7 @@ class GraphRenderer {
                     strokeColor = '#FF6B35';
                     lineWidth = edge.width;
                 } else if (isScheduledEdge) {
-                    strokeColor = '#4CAF50'; // Same green as scheduled nodes
+                    strokeColor = '#4CAF50';
                     lineWidth = 3;
                 }
                 
