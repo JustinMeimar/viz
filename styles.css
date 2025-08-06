@@ -37,6 +37,12 @@ body {
     white-space: nowrap;
 }
 
+#selection-info {
+    font-size: 14px;
+    color: #ccc;
+    font-style: italic;
+}
+
 input[type="range"] {
     width: 150px;
     height: 6px;
