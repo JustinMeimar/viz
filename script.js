@@ -572,7 +572,7 @@ class GraphRenderer {
             } else if (node.scheduled) {
                 fillColor = '#90caf9';
             } else if (node.highlighted) {
-                fillColor = '#FFD700';
+                fillColor = '#e1f5fe';
             } else if (node.hovered) {
                 fillColor = '#eeeeee';
             }
@@ -765,17 +765,10 @@ class App {
         }
         
         if (this.state.searchTerm) {
-            // Clear current selection and select matching nodes
-            this.state.clearSelection();
-            
             const results = this.graphModel.searchNodes(this.state.searchTerm);
             results.forEach(node => {
                 node.highlighted = true;
-                this.state.selectNode(node.id);
             });
-            
-            // Update visual selection state
-            this.updateSelection();
         }
     }
     
