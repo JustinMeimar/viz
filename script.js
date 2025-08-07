@@ -572,7 +572,7 @@ class GraphRenderer {
             } else if (node.scheduled) {
                 fillColor = '#90caf9';
             } else if (node.highlighted) {
-                fillColor = '#e1f5fe';
+                fillColor = '#faa7b4';
             } else if (node.hovered) {
                 fillColor = '#eeeeee';
             }
@@ -672,6 +672,7 @@ class App {
         this.animationId = null;
         
         this.initializeControls();
+        this.initializeSchedulePanel();
         this.loadData();
         this.startRenderLoop();
         this.setupKeyboardHandlers();
@@ -681,6 +682,97 @@ class App {
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 this.clearSelection();
+            }
+        });
+    }
+    
+    initializeSchedulePanel() {
+        const scheduleToggle = document.getElementById('schedule-toggle');
+        
+        scheduleToggle.addEventListener('change', () => {
+            this.toggleSchedulePanel();
+        });
+    }
+    
+    toggleSchedulePanel() {
+        const panel = document.getElementById('schedule-panel');
+        const checkbox = document.getElementById('schedule-toggle');
+        
+        if (checkbox.checked) {
+            panel.style.display = 'flex';
+        } else {
+            panel.style.display = 'none';
+        }
+    }
+    
+    populateScheduleList() {
+        const scheduleList = document.getElementById('schedule-list');
+        scheduleList.innerHTML = '';
+        
+        this.state.schedule.forEach((item, index) => {
+            const scheduleItem = document.createElement('div');
+            scheduleItem.className = 'schedule-item';
+            scheduleItem.dataset.index = index;
+            
+            scheduleItem.innerHTML = `
+                <div>
+                    <div class="schedule-item-label">${item.op_code}</div>
+                    <div class="schedule-item-id">#${item.op_magic}</div>
+                </div>
+            `;
+            
+            scheduleItem.addEventListener('click', () => {
+                this.centerOnScheduleItem(index);
+            });
+            
+            scheduleList.appendChild(scheduleItem);
+        });
+        
+        this.updateScheduleListProgress();
+    }
+    
+    centerOnScheduleItem(index) {
+        const scheduleItem = this.state.schedule[index];
+        if (scheduleItem) {
+            const nodeId = scheduleItem.op_magic.toString();
+            this.centerOnNode(nodeId);
+            
+            // Update schedule progress to this item
+            this.state.updateScheduleIndex(index);
+            this.updateScheduleVisualization();
+            this.updateScheduleListProgress();
+            
+            // Update slider
+            const scheduleSlider = document.getElementById('schedule-slider');
+            scheduleSlider.value = index;
+        }
+    }
+    
+    centerOnNode(nodeId) {
+        const node = this.graphModel.getNode(nodeId);
+        if (node) {
+            const zoom = this.view.camera.zoom;
+            this.view.camera.x = this.canvas.width / 2 - node.x * zoom;
+            this.view.camera.y = this.canvas.height / 2 - node.y * zoom;
+            
+            console.log(`Centered on node: ${node.label} (ID: ${nodeId})`);
+        }
+    }
+    
+    updateScheduleListProgress() {
+        const scheduleItems = document.querySelectorAll('.schedule-item');
+        const currentIndex = this.state.currentScheduleIndex;
+        
+        scheduleItems.forEach((item, index) => {
+            item.classList.remove('completed', 'current');
+            
+            if (index < currentIndex) {
+                item.classList.add('completed');
+            } else if (index === currentIndex) {
+                item.classList.add('current');
+                
+                // Auto-scroll to current item
+                item.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         });
     }
@@ -786,6 +878,9 @@ class App {
                 }
             }
         }
+        
+        // Update schedule list progress when visualization updates
+        this.updateScheduleListProgress();
     }
     
     startAnimation() {
@@ -850,6 +945,7 @@ class App {
             scheduleSlider.max = scheduleData.schedule.length - 1;
             
             this.centerGraph();
+            this.populateScheduleList();
             
         } catch (error) {
             console.error('Error loading data:', error);

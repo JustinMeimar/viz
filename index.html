@@ -25,11 +25,30 @@
         </div>
         
         <div class="control-group">
+            <label for="schedule-toggle">
+                <input type="checkbox" id="schedule-toggle">
+                Schedule Panel
+            </label>
+        </div>
+        
+        <div class="control-group">
             <span id="selection-info">No nodes selected</span>
         </div>
     </div>
     
     <canvas id="canvas"></canvas>
+    
+    <!-- Schedule Panel -->
+    <div id="schedule-panel" class="schedule-panel" style="display: none;">
+        <div class="panel-header">
+            <h3>Schedule</h3>
+        </div>
+        <div class="panel-content">
+            <div id="schedule-list" class="schedule-list">
+                <!-- Schedule items will be populated here -->
+            </div>
+        </div>
+    </div>
     
     <script src="script.js"></script>
 </body>
