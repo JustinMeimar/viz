@@ -199,3 +199,78 @@ button:active {
     color: rgba(255, 255, 255, 0.8);
 }
 
+#schedule-progress {
+    font-weight: 500;
+    color: #7986cb;
+}
+
+/* Speed Buttons */
+.speed-buttons {
+    display: flex;
+    gap: 5px;
+    margin-right: 10px;
+}
+
+.speed-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    border: 1px solid #7986cb;
+    background-color: transparent;
+    color: #7986cb;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.speed-btn:hover {
+    background-color: rgba(121, 134, 203, 0.1);
+}
+
+.speed-btn.active {
+    background-color: #7986cb;
+    color: white;
+}
+
+/* Node Info Panel */
+.node-info-panel {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    width: 250px;
+    background-color: #f5f5f5;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    z-index: 1000;
+    font-size: 12px;
+}
+
+.node-info-header {
+    background-color: #333;
+    color: white;
+    padding: 8px 12px;
+    font-weight: 500;
+    border-radius: 3px 3px 0 0;
+}
+
+#node-info-content {
+    padding: 10px 12px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.node-connections {
+    margin: 5px 0;
+}
+
+.connection-label {
+    font-weight: 500;
+    color: #333;
+}
+
+.connection-ids {
+    color: #666;
+    font-family: monospace;
+    font-size: 11px;
+    margin-left: 10px;
+}
+

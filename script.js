@@ -670,6 +670,8 @@ class App {
         this.layoutEngine = new GraphLayoutEngine(this.graphModel);
         this.renderer = new GraphRenderer(this.view);
         this.animationId = null;
+        this.animationSpeedMultiplier = 1;
+        this.lastSelectedNodeId = null;
         
         this.initializeControls();
         this.initializeSchedulePanel();
@@ -716,7 +718,7 @@ class App {
             
             scheduleItem.innerHTML = `
                 <div>
-                    <div class="schedule-item-label">${item.op_code}</div>
+                    <div class="schedule-item-label">${index + 1}. ${item.op_code}</div>
                     <div class="schedule-item-id">#${item.op_magic}</div>
                 </div>
             `;
@@ -781,6 +783,7 @@ class App {
         const clickedNode = this.graphModel.getNodeAtPosition(worldX, worldY);
         
         if (clickedNode) {
+            this.lastSelectedNodeId = clickedNode.id;
             if (ctrlKey) {
                 this.state.toggleNodeSelection(clickedNode.id);
             } else {
@@ -788,14 +791,18 @@ class App {
             }
         } else {
             this.state.clearSelection();
+            this.lastSelectedNodeId = null;
         }
         
         this.updateSelection();
+        this.updateNodeInfo();
     }
     
     clearSelection() {
         this.state.clearSelection();
+        this.lastSelectedNodeId = null;
         this.updateSelection();
+        this.updateNodeInfo();
     }
     
     updateSelection() {
@@ -823,6 +830,19 @@ class App {
         const speedSlider = document.getElementById('speed-slider');
         const playPauseBtn = document.getElementById('play-pause-btn');
         const searchInput = document.getElementById('search-input');
+        
+        // Initialize speed buttons
+        const speedBtns = document.querySelectorAll('.speed-btn');
+        speedBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const speed = parseInt(btn.dataset.speed);
+                this.setAnimationSpeed(speed);
+                
+                // Update active button
+                speedBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
         
         scheduleSlider.addEventListener('input', (e) => {
             this.state.updateScheduleIndex(parseInt(e.target.value));
@@ -881,6 +901,12 @@ class App {
         
         // Update schedule list progress when visualization updates
         this.updateScheduleListProgress();
+        
+        // Update progress display
+        const progressSpan = document.getElementById('schedule-progress');
+        const total = this.state.schedule.length;
+        const current = Math.min(this.state.currentScheduleIndex + 1, total);
+        progressSpan.textContent = `${current} / ${total}`;
     }
     
     startAnimation() {
@@ -895,7 +921,7 @@ class App {
                     const scheduleSlider = document.getElementById('schedule-slider');
                     scheduleSlider.value = this.state.currentScheduleIndex;
                     
-                    this.animationId = setTimeout(animate, 1000);
+                    this.animationId = setTimeout(animate, 1000 / this.animationSpeedMultiplier);
                 } else {
                     this.state.isPlaying = false;
                     document.getElementById('play-pause-btn').textContent = 'Play';
@@ -905,6 +931,53 @@ class App {
         };
         
         animate();
+    }
+    
+    setAnimationSpeed(multiplier) {
+        this.animationSpeedMultiplier = multiplier;
+    }
+    
+    updateNodeInfo() {
+        const nodeInfoContent = document.getElementById('node-info-content');
+        
+        if (!this.lastSelectedNodeId) {
+            nodeInfoContent.innerHTML = '<div>Select a node to see connections</div>';
+            return;
+        }
+        
+        const node = this.graphModel.getNode(this.lastSelectedNodeId);
+        if (!node) {
+            nodeInfoContent.innerHTML = '<div>Node not found</div>';
+            return;
+        }
+        
+        // Get predecessors and successors
+        const predecessors = [];
+        const successors = [];
+        
+        for (const edge of this.graphModel.edges) {
+            if (edge.toId === this.lastSelectedNodeId) {
+                predecessors.push(edge.fromId);
+            }
+            if (edge.fromId === this.lastSelectedNodeId) {
+                successors.push(edge.toId);
+            }
+        }
+        
+        const predText = predecessors.length > 0 ? predecessors.join(', ') : 'None';
+        const succText = successors.length > 0 ? successors.join(', ') : 'None';
+        
+        nodeInfoContent.innerHTML = `
+            <div><strong>Node:</strong> ${node.label} (#${node.id})</div>
+            <div class="node-connections">
+                <div class="connection-label">Predecessors:</div>
+                <div class="connection-ids">${predText}</div>
+            </div>
+            <div class="node-connections">
+                <div class="connection-label">Successors:</div>
+                <div class="connection-ids">${succText}</div>
+            </div>
+        `;
     }
     
     stopAnimation() {

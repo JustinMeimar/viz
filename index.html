@@ -9,13 +9,19 @@
 <body>
     <div class="controls">
         <div class="control-group">
-            <label for="schedule-slider">Schedule Progress:</label>
+            <label for="schedule-slider">Schedule Progress: <span id="schedule-progress">0 / 0</span></label>
             <input type="range" id="schedule-slider" min="0" max="100" value="0">
         </div>
         
         <div class="control-group">
-            <label for="speed-slider">Animation Speed:</label>
-            <input type="range" id="speed-slider" min="1" max="10" value="5">
+            <label>Animation Speed:</label>
+            <div class="speed-buttons">
+                <button class="speed-btn active" data-speed="1">1x</button>
+                <button class="speed-btn" data-speed="2">2x</button>
+                <button class="speed-btn" data-speed="4">4x</button>
+                <button class="speed-btn" data-speed="8">8x</button>
+                <button class="speed-btn" data-speed="16">16x</button>
+            </div>
             <button id="play-pause-btn">Play</button>
         </div>
         
@@ -37,6 +43,14 @@
     </div>
     
     <canvas id="canvas"></canvas>
+    
+    <!-- Node Info Panel -->
+    <div id="node-info-panel" class="node-info-panel">
+        <div class="node-info-header">Node Info</div>
+        <div id="node-info-content">
+            <div>Select a node to see connections</div>
+        </div>
+    </div>
     
     <!-- Schedule Panel -->
     <div id="schedule-panel" class="schedule-panel" style="display: none;">
