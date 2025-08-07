@@ -6,8 +6,8 @@ class Node {
         this.y = y;
         this.width = Math.max(80, label.length * 12 + 20);
         this.height = 40;
-        this.color = '#e0e0e0';
-        this.borderColor = '#666';
+        this.color = '#f5f5f5';
+        this.borderColor = '#9e9e9e';
         this.textColor = '#333';
         this.highlighted = false;
         this.scheduled = false;
@@ -34,7 +34,7 @@ class Edge {
     constructor(fromId, toId) {
         this.fromId = fromId;
         this.toId = toId;
-        this.color = '#999';
+        this.color = '#bdbdbd';
         this.width = 2;
         this.highlighted = false;
         this.selected = false;
@@ -366,8 +366,32 @@ class GraphLayoutEngine {
         
         const nodes = Array.from(this.graphModel.nodes.values());
         
+        // Calculate dynamic layout width based on actual graph structure
+        this.calculateDynamicLayoutWidth(nodes);
+        
         this.hierarchicalLayout(nodes);
         this.graphModel.updateBounds();
+    }
+    
+    calculateDynamicLayoutWidth(nodes) {
+        const levels = this.computeLevels(nodes);
+        if (levels.length === 0) return;
+        
+        let maxLayerWidth = 0;
+        
+        levels.forEach(levelNodes => {
+            if (levelNodes.length === 0) return;
+            
+            // Calculate total width needed for this layer
+            const totalNodeWidth = levelNodes.reduce((sum, node) => sum + node.width, 0);
+            const totalSpacing = (levelNodes.length - 1) * this.minNodeSpacing;
+            const layerWidth = totalNodeWidth + totalSpacing;
+            
+            maxLayerWidth = Math.max(maxLayerWidth, layerWidth);
+        });
+        
+        // Set layout width with 20% padding, minimum of 1000px
+        this.layoutWidth = Math.max(1000, maxLayerWidth * 1.2);
     }
     
     hierarchicalLayout(nodes) {
@@ -404,8 +428,12 @@ class GraphLayoutEngine {
             const scaleFactor = totalNeeded > availableWidth ? availableWidth / totalNeeded : 1;
             const actualNodeSpacing = this.minNodeSpacing * scaleFactor;
             
-            // Position nodes with proper spacing accounting for their widths
-            let currentX = this.minNodeSpacing + (levelNodes[0].width / 2);
+            // Calculate total layer width with actual spacing
+            const totalLayerWidth = totalNodeWidth + (levelNodes.length - 1) * actualNodeSpacing;
+            
+            // Center the layer horizontally
+            const startX = (this.layoutWidth - totalLayerWidth) / 2 + (levelNodes[0].width / 2);
+            let currentX = startX;
             
             levelNodes.forEach((node, nodeIndex) => {
                 node.x = currentX;
@@ -524,23 +552,29 @@ class GraphRenderer {
     
     renderNodes(nodes) {
         nodes.forEach(node => {
-            // Selection has highest priority for border
+            // Border color priority: selected > scheduled > default
             let borderColor = node.borderColor;
             let lineWidth = 2;
             
+            if (node.scheduled) {
+                borderColor = '#5c6bc0';
+            }
+            
             if (node.selected) {
-                borderColor = '#2196F3';
+                borderColor = '#42a5f5';
                 lineWidth = 3;
             }
             
-            // Fill color priority: scheduled > highlighted > hovered > default
+            // Fill color priority: selected+scheduled > scheduled > highlighted > hovered > default
             let fillColor = node.color;
-            if (node.scheduled) {
-                fillColor = '#4CAF50';
+            if (node.scheduled && node.selected) {
+                fillColor = '#b3e5fc';
+            } else if (node.scheduled) {
+                fillColor = '#90caf9';
             } else if (node.highlighted) {
                 fillColor = '#FFD700';
             } else if (node.hovered) {
-                fillColor = '#BBBBBB';
+                fillColor = '#eeeeee';
             }
             
             this.ctx.fillStyle = fillColor;
@@ -560,45 +594,41 @@ class GraphRenderer {
     }
     
     renderEdges(graphModel, visibleNodes) {
-        const visibleNodeIds = new Set(visibleNodes.map(n => n.id));
-        
         graphModel.edges.forEach(edge => {
             const fromNode = graphModel.getNode(edge.fromId);
             const toNode = graphModel.getNode(edge.toId);
             
             if (!fromNode || !toNode) return;
             
-            if (visibleNodeIds.has(edge.fromId) && visibleNodeIds.has(edge.toId)) {
-                let strokeColor = edge.color;
-                let lineWidth = edge.width;
-                
-                const isScheduledEdge = fromNode.scheduled || toNode.scheduled;
-                
-                if (edge.selected) {
-                    strokeColor = '#2196F3';
-                    lineWidth = 3;
-                } else if (edge.highlighted) {
-                    strokeColor = '#FF6B35';
-                    lineWidth = edge.width;
-                } else if (isScheduledEdge) {
-                    strokeColor = '#4CAF50';
-                    lineWidth = 3;
-                }
-                
-                this.ctx.strokeStyle = strokeColor;
-                this.ctx.lineWidth = lineWidth;
-                
-                this.ctx.beginPath();
-                this.ctx.moveTo(fromNode.x, fromNode.y + fromNode.height / 2);
-                this.ctx.lineTo(toNode.x, toNode.y - toNode.height / 2);
-                this.ctx.stroke();
-                
-                this.drawArrowHead(
-                    fromNode.x, fromNode.y + fromNode.height / 2,
-                    toNode.x, toNode.y - toNode.height / 2,
-                    strokeColor
-                );
+            let strokeColor = edge.color;
+            let lineWidth = edge.width;
+            
+            const isScheduledEdge = fromNode.scheduled || toNode.scheduled;
+            
+            if (edge.selected) {
+                strokeColor = '#42a5f5';
+                lineWidth = 3;
+            } else if (edge.highlighted) {
+                strokeColor = '#FF6B35';
+                lineWidth = edge.width;
+            } else if (isScheduledEdge) {
+                strokeColor = '#7986cb';
+                lineWidth = 3;
             }
+            
+            this.ctx.strokeStyle = strokeColor;
+            this.ctx.lineWidth = lineWidth;
+            
+            this.ctx.beginPath();
+            this.ctx.moveTo(fromNode.x, fromNode.y + fromNode.height / 2);
+            this.ctx.lineTo(toNode.x, toNode.y - toNode.height / 2);
+            this.ctx.stroke();
+            
+            this.drawArrowHead(
+                fromNode.x, fromNode.y + fromNode.height / 2,
+                toNode.x, toNode.y - toNode.height / 2,
+                strokeColor
+            );
         });
     }
     
@@ -834,14 +864,25 @@ class App {
     }
     
     centerGraph() {
-        if (this.graphModel.nodes.size === 0) return;
+        if (this.graphModel.nodes.size === 0) {
+            // Fallback: center camera at origin
+            this.view.camera.x = this.canvas.width / 2;
+            this.view.camera.y = this.canvas.height / 2;
+            this.view.camera.zoom = 0.5;
+            console.log('No nodes found, centering at origin');
+            return;
+        }
         
-        const bounds = this.graphModel.bounds;
-        const centerX = (bounds.minX + bounds.maxX) / 2;
-        const centerY = (bounds.minY + bounds.maxY) / 2;
+        // Get first node to ensure we start on something visible
+        const firstNode = Array.from(this.graphModel.nodes.values())[0];
         
-        this.view.camera.x = this.canvas.width / 2 - centerX;
-        this.view.camera.y = this.canvas.height / 2 - centerY;
+        // Simple, reliable zoom and positioning
+        const zoom = 0.3; // 30% zoom - good balance for large graphs
+        this.view.camera.zoom = zoom;
+        this.view.camera.x = this.canvas.width / 2 - firstNode.x * zoom;
+        this.view.camera.y = this.canvas.height / 2 - firstNode.y * zoom;
+        
+        console.log(`Centered on first node: ${firstNode.label} at position (${firstNode.x}, ${firstNode.y}) with zoom ${zoom}`);
     }
 }
 
